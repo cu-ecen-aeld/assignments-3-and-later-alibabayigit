@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 
 
     openlog("Assg2 logs", LOG_PID, LOG_USER);
-    if(argc < NO_OF_ARGS){
+    if(argc != NO_OF_ARGS){
         syslog(LOG_ERR, "Error: Insufficient number of arguments");
         closelog();
         return 1;
