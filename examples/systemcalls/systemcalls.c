@@ -1,4 +1,10 @@
+#define _XOPEN_SOURCE
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,8 +22,10 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-
-    return true;
+    if(system(cmd) == -1)
+    	return false;
+    else
+    	return true;
 }
 
 /**
@@ -58,7 +66,33 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-
+	
+    va_end(args);
+    int status;
+    int ret;
+    pid_t pid;
+    
+    fflush(stdout);
+    pid = fork();
+    
+    if(pid == -1)
+    	return false; /* error on fork() */
+    else if(pid == 0){ /* child */
+    	ret = execv(command[0], command);
+    	if(ret == -1)
+    	    exit(-1); /* error on execv */
+    	else
+    	    exit(0);
+    }
+    else{
+    	if(waitpid(pid, &status, 0) == -1)
+    	    return false; /* erron on waitpid() */
+    	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+	    return true;
+    	else
+    	    return false;
+    }
+    
     va_end(args);
 
     return true;
@@ -82,7 +116,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 
 /*
@@ -92,8 +126,38 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
-
     va_end(args);
+    int status;
+    int ret;
+    pid_t pid;
+    
+    	
+    int fd = open(outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+    if(fd == -1)
+    	return false; /* error on open */
+    	
+    fflush(stdout);
+    pid = fork();
+    
+    if(pid == -1)
+    	return false; /* error on fork() */
+    else if(pid == 0){ /* child */
+    	if(dup2(fd, 1) < 0)
+    	    return false; /* error on dup2 */
+    	close(fd);
+    	ret = execv(command[0], command);
+    	if(ret == -1)
+    	    return false; /* error on execv */
+    }
+    else{ /* parent */
+    	if(waitpid(pid, &status, 0) == -1)
+    	    return false; /* erron on waitpid() */
+    	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+	    return true;
+    	else
+    	    return false;
+    }
+//    va_end(args);
 
     return true;
 }
