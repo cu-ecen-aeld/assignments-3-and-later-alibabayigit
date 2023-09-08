@@ -67,7 +67,7 @@ int main(int argc, char* argv[]){
 	
 	for(iterator = servinfo; iterator != NULL; iterator = iterator->ai_next){
 	
-		sfd = socket(PF_INET, SOCK_STREAM, 0);
+		sfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 		if(sfd == -1){ /*error on socket() */
 		     //TODO: log error
 		     printf("error on socket\n");
