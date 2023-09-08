@@ -23,7 +23,7 @@ int fd;
 void sig_handler(int signal_number){
 
 	if(signal_number == SIGINT || signal_number == SIGTERM){
-	
+		printf("caught signal exiting\n");
 		syslog(LOG_DEBUG, "Caught signal, exiting");
 		close(sfd);
 		close(cfd);
@@ -33,7 +33,7 @@ void sig_handler(int signal_number){
 }
 
 int main(int argc, char* argv[]){
-
+	printf("starting aesdsocket application\n");
 	struct addrinfo hints;
 	struct addrinfo *servinfo, *iterator;
 	memset(&hints, 0, sizeof hints); 
@@ -54,11 +54,14 @@ int main(int argc, char* argv[]){
 	
 	int num_bytes_read = 0;
 	int num_bytes_sent = 0;
+
+	printf("param init complete\n");
 	
 	signal(SIGINT, sig_handler);
 	signal(SIGTERM, sig_handler);
 
 	if(getaddrinfo(NULL, PORT, &hints, &servinfo) != 0) {
+	    printf("error on getaddrinfo\n");
 	    return -1;
 	}
 	
@@ -67,16 +70,19 @@ int main(int argc, char* argv[]){
 		sfd = socket(PF_INET, SOCK_STREAM, 0);
 		if(sfd == -1){ /*error on socket() */
 		     //TODO: log error
+		     printf("error on socket\n");
 		     continue;
 		}
 	
 		if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) == -1) {
+		    printf("error on setsockopt\n");
 		    return -1;
 		} 
 		
 		ret = bind(sfd, servinfo->ai_addr, servinfo->ai_addrlen);
 		if(ret == -1){ /* error on bind() */
 		    // TODO: log error
+		    printf("error on bind\n");
 		    close(sfd);
 		    return -1;
 		}
@@ -87,19 +93,22 @@ int main(int argc, char* argv[]){
 	freeaddrinfo(servinfo);
 	
 	if(iterator == NULL){ // failed to bind
+	        printf("failed to bind\n");
 		return -1;
 	}
 	
 	ret = listen(sfd, 20);
 	if(ret == -1){ // error on listen()
 	    // TODO: log error
+	    printf("error on listen\n");
 	    return -1;
 	}
 	
 	if(argc == 2 && strcmp(argv[1], "-d") == 0){
-	
+		printf("starting as daemon\n");
 		daemon(0, 0);
 	}
+	printf("entering while 1\n");
 
 	while(1){
 	
@@ -107,6 +116,7 @@ int main(int argc, char* argv[]){
 		cfd = accept(sfd, (struct sockaddr *)&client_addr, &addr_size);
 		if(cfd == -1){ // error on accept()
 		    // TODO: log error
+		    printf("error on aceept\n");
 		    return -1;
 		    // continue;
 		}
